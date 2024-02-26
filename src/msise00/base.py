@@ -26,6 +26,9 @@ species = ["He", "O", "N2", "O2", "Ar", "Total", "H", "N", "AnomalousO"]
 ttypes = ["Texo", "Tn"]
 first = True
 
+EXE_NAME = "msise00_driver"
+
+EXE = importlib.resources.files(__package__)/EXE_NAME
 
 def build():
     """
@@ -46,8 +49,7 @@ def build():
         subprocess.check_call([cmake, f"-S{s}", f"-B{b}"] + g)
         subprocess.check_call([cmake, "--build", str(b), "--parallel"])
 
-
-def run(
+def run_legacy(
     time: datetime,
     altkm: float,
     glat: float,
@@ -106,6 +108,48 @@ def loopalt_gtd(
 
     return atmos
 
+
+def run(
+    time: datetime,
+    altkm: float,
+    glat: float,
+    glon: float,
+    indices: dict[str, T.Any] = None
+) -> dict:
+    """
+    This is a true atomic function
+    """
+    doy = time.strftime("%j")
+
+    f107s = indices["f107s"]
+    f107 = indices["f107"]
+    Ap = indices["Ap"]
+    cmd = [
+        str(EXE),
+        doy,
+        str(time.hour),
+        str(time.minute),
+        str(time.second),
+        str(glat),
+        str(glon),
+        str(f107s),
+        str(f107),
+        str(Ap),
+        str(altkm),
+    ]
+
+    # profiling logs
+    ret = subprocess.check_output(cmd, text=True)
+
+    # different compilers throw in extra \n
+    raw = list(map(float, ret.split()))
+    if not len(raw) == 11:
+        raise ValueError(ret)
+
+    atmos = {k:v for k,v in zip(species, raw[:9])}
+    atmos.update({k:v for k,v in zip(ttypes, raw[9:])})
+
+    return atmos
 
 def rungtd1d(
     time: datetime, altkm: float, glat: float, glon: float, indices: dict[str, T.Any] = None
