@@ -91,3 +91,6 @@ target/
 *.exe
 *.out
 *.app
+
+# Driver
+src/msise00/msise00_driver
