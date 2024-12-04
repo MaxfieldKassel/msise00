@@ -16,7 +16,6 @@ import subprocess
 import typing as T
 from datetime import date, datetime
 
-import geomagindices as gi
 import numpy as np
 import xarray
 
@@ -108,15 +107,13 @@ def loopalt_gtd(
 
 
 def rungtd1d(
-    time: datetime, altkm: float, glat: float, glon: float, indices: dict[str, T.Any] = None
+    time: datetime, altkm: float, glat: float, glon: float, indices: dict[str, T.Any]
 ) -> xarray.Dataset:
     """
     This is the "atomic" function looped by other functions
     """
     time = todatetime(time)
-    # %% get solar parameters for date
-    if not indices:
-        indices = gi.get_indices(time, smoothdays=81).squeeze().to_dict()
+
     assert isinstance(indices, dict)
     # %% dimensions
     altkm = np.atleast_1d(altkm)
