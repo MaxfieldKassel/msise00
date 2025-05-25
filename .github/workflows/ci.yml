@@ -40,7 +40,7 @@ jobs:
       run: ls -l dist
 
     - name: Upload wheel artifact
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: msise00-wheel
         path: dist/*.whl
