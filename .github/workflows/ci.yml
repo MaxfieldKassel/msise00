@@ -11,48 +11,64 @@ on:
     - .github/workflows/ci.yml
 
 jobs:
-
   linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install Fortran compiler
+      run: sudo apt-get update && sudo apt-get install -y gfortran
+
+    - name: Build Fortran library
+      run: make fortran
+
     - uses: actions/setup-python@v2
       with:
-        python-version: 3.7
+        python-version: 3.9
 
     - run: pip install .[tests,lint]
-
     - run: flake8
     - run: mypy
-
     - run: pytest
-
 
   macos:
     needs: linux
     runs-on: macos-latest
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install Fortran compiler
+      run: brew install gcc
+
+    - name: Build Fortran library
+      run: make fortran
+
     - uses: actions/setup-python@v2
       with:
         python-version: 3.9
 
     - run: pip install .[tests]
-
     - run: pytest
       env:
         FC: gfortran-11
-
 
   windows:
     needs: linux
     runs-on: windows-latest
     steps:
     - uses: actions/checkout@v2
+
+    - name: Install Fortran compiler
+      shell: bash
+      run: choco install mingw -y
+
+    - name: Build Fortran library
+      shell: bash
+      run: make fortran
+
     - uses: actions/setup-python@v2
       with:
         python-version: 3.9
 
     - run: pip install .[tests]
-
     - run: pytest
