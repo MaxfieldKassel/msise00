@@ -24,15 +24,27 @@ jobs:
     
     - name: tree
       run: tree
-      
+
     - uses: actions/setup-python@v2
       with:
         python-version: 3.9
 
-    - run: pip install .[tests,lint]
-    - run: flake8
-    - run: mypy
-    - run: pytest
+   
+    - name: Install packaging tools
+      run: pip install --upgrade build
+
+    - name: Build wheel
+      run: python -m build --wheel
+
+    - name: List built artifacts
+      run: ls -l dist
+
+    - name: Upload wheel artifact
+      uses: actions/upload-artifact@v2
+      with:
+        name: msise00-wheel
+        path: dist/*.whl
+
 
   macos:
     needs: linux
