@@ -21,7 +21,10 @@ jobs:
 
     - name: Build Fortran library
       run: cmake -B build && cmake --build build
-
+    
+    - name: tree
+      run: tree
+      
     - uses: actions/setup-python@v2
       with:
         python-version: 3.9
