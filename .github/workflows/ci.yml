@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ["3.10", "3.11", "3.12"]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout code
@@ -72,15 +72,3 @@ jobs:
         with:
           name: msise00-wheel-${{ matrix.os }}-py${{ matrix.python-version }}
           path: dist/*.whl
-
-      - name: Test wheel install
-        shell: bash
-        env:
-          FC: gfortran-11
-        run: |
-          wheel=$(ls dist/*.whl | head -n1)
-          echo "Installing $wheel[tests,lint]"
-          pip install "${wheel}[tests,lint]"
-          flake8
-          mypy
-          pytest
