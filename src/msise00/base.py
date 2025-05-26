@@ -15,6 +15,7 @@ import shutil
 import subprocess
 import typing as T
 from datetime import date, datetime
+from typing import Optional
 
 import geomagindices as gi
 import numpy as np
@@ -31,20 +32,7 @@ def build():
     """
     attempt to build using CMake
     """
-    cmake = shutil.which("cmake")
-    if not cmake:
-        raise FileNotFoundError("CMake not available")
-
-    with importlib.resources.as_file(importlib.resources.files(__package__)/'CMakeLists.txt') as f:
-        s = f.parent
-        b = s / "build"
-        g = []
-
-        if os.name == "nt" and not os.environ.get("CMAKE_GENERATOR"):
-            g = ["-G", "MinGW Makefiles"]
-
-        subprocess.check_call([cmake, f"-S{s}", f"-B{b}"] + g)
-        subprocess.check_call([cmake, "--build", str(b), "--parallel"])
+    raise NotImplementedError("Building is no longer supported. Please use the pre-built binaries.")
 
 
 def run(
@@ -52,7 +40,7 @@ def run(
     altkm: float,
     glat: float,
     glon: float,
-    indices: dict[str, T.Any] = None,
+    indices: Optional[dict[str, T.Any]] = None,
 ) -> xarray.Dataset:
     """
     loops the rungtd1d function below. Figure it's easier to troubleshoot in Python than Fortran.
@@ -74,7 +62,7 @@ def loopalt_gtd(
     glat: float | np.ndarray,
     glon: float | np.ndarray,
     altkm: float,
-    indices: dict[str, T.Any] = None,
+    indices: Optional[dict[str, T.Any]] = None,
 ) -> xarray.Dataset:
     """
     loop over location and time
@@ -108,7 +96,8 @@ def loopalt_gtd(
 
 
 def rungtd1d(
-    time: datetime, altkm: float, glat: float, glon: float, indices: dict[str, T.Any] = None
+    time: datetime, altkm: float, glat: float, glon: float,
+    indices: Optional[dict[str, T.Any]] = None
 ) -> xarray.Dataset:
     """
     This is the "atomic" function looped by other functions

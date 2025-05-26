@@ -3,6 +3,7 @@ import xarray
 from datetime import datetime
 from matplotlib.pyplot import figure, close
 from matplotlib.ticker import ScalarFormatter
+from typing import Optional
 
 try:
     from pymap3d import aer2geodetic
@@ -20,7 +21,7 @@ sfmt.set_scientific(True)
 sfmt.set_useOffset(False)
 
 
-def plotgtd(atmos: xarray.Dataset, rodir: Path = None):
+def plotgtd(atmos: xarray.Dataset, rodir: Optional[Path] = None):
     #
     if rodir:
         rodir = Path(rodir).expanduser()
@@ -53,7 +54,7 @@ def plotgtd(atmos: xarray.Dataset, rodir: Path = None):
         print(atmos)
 
 
-def plot4d(atmos: xarray.Dataset, rodir: Path = None):
+def plot4d(atmos: xarray.Dataset, rodir: Optional[Path] = None):
 
     for t in atmos.time:
         if Time is not None and aer2geodetic is not None:
@@ -70,7 +71,7 @@ def plot4d(atmos: xarray.Dataset, rodir: Path = None):
             plot2dlatlon(atmos.sel(time=t), rodir)
 
 
-def plot2dlatlon(atmos: xarray.Dataset, rodir: Path = None, slat: float = None, slon: float = None):
+def plot2dlatlon(atmos: xarray.Dataset, rodir: Optional[Path] = None, slat: Optional[float] = None, slon: Optional[float] = None):
 
     fg = figure(figsize=(8, 8))
     ax = fg.subplots(4, 2, sharex=True).ravel()
@@ -119,7 +120,7 @@ def plot2dlatlon(atmos: xarray.Dataset, rodir: Path = None, slat: float = None, 
         writeplot(fg, ofn)
 
 
-def plot1dalt(atmos: xarray.Dataset, odir: Path = None):
+def plot1dalt(atmos: xarray.Dataset, odir: Optional[Path] = None):
 
     footer = f"\n({atmos.lat.item()},{atmos.lon.item()})  Ap {atmos.Ap}  F10.7 {atmos.f107}"
 
@@ -169,7 +170,7 @@ def plot1dalt(atmos: xarray.Dataset, odir: Path = None):
         writeplot(fg, ofn)
 
 
-def plot1dtime(atmos: xarray.Dataset, odir: Path = None):
+def plot1dtime(atmos: xarray.Dataset, odir: Optional[Path] = None):
 
     footer = f"\n({atmos.lat.item()},{atmos.lon.item()})  alt: {atmos.alt_km.item()} km,  Ap {atmos.Ap}  F10.7 {atmos.f107}"
 
