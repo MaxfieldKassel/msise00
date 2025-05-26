@@ -6,9 +6,8 @@ env:
 
 on:
   push:
-    paths:
-    - "**.py"
-    - .github/workflows/ci.yml
+    branches:
+      - main
 
 jobs:
   linux:
@@ -45,46 +44,91 @@ jobs:
         name: msise00-wheel
         path: dist/*.whl
 
-
   macos:
     needs: linux
     runs-on: macos-latest
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Install Fortran compiler
-      run: brew install gcc
+      - name: Install system build tools
+        run: |
+          brew update
+          brew install cmake gcc make
 
-    - name: Build Fortran library
-      run: make fortran
+      - name: Build Fortran driver
+        run: |
+          cmake -B build
+          cmake --build build
 
-    - uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
 
-    - run: pip install .[tests]
-    - run: pytest
-      env:
-        FC: gfortran-11
+      - name: Install packaging tools
+        run: pip install --upgrade build
+
+      - name: Build wheel
+        run: python -m build --wheel
+
+      - name: List built artifacts
+        run: ls -l dist
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: msise00-wheel-macos
+          path: dist/*.whl
+
+      - name: Test wheel install
+        run: |
+          pip install dist/*.whl[tests]
+          pytest
+        env:
+          FC: gfortran-11
 
   windows:
     needs: linux
     runs-on: windows-latest
     steps:
-    - uses: actions/checkout@v2
+      - name: Checkout code
+        uses: actions/checkout@v2
 
-    - name: Install Fortran compiler
-      shell: bash
-      run: choco install mingw -y
+      - name: Install system build tools
+        shell: bash
+        run: |
+          # install MinGW / gfortran and CMake
+          choco install mingw cmake make --yes
+          refreshenv
 
-    - name: Build Fortran library
-      shell: bash
-      run: make fortran
+      - name: Build Fortran driver
+        shell: bash
+        run: |
+          cmake -B build -G "MinGW Makefiles"
+          cmake --build build
 
-    - uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
 
-    - run: pip install .[tests]
-    - run: pytest
+      - name: Install packaging tools
+        run: pip install --upgrade build
 
+      - name: Build wheel
+        run: python -m build --wheel
+
+      - name: List built artifacts
+        run: dir dist
+
+      - name: Upload wheel artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: msise00-wheel-windows
+          path: dist/*.whl
+
+      - name: Test wheel install
+        run: |
+          pip install dist\*.whl[tests]
+          pytest
