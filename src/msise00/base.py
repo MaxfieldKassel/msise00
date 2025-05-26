@@ -16,7 +16,6 @@ import typing as T
 from datetime import date, datetime
 from typing import Optional
 
-import geomagindices as gi
 import numpy as np
 import xarray
 
@@ -26,6 +25,9 @@ species = ["He", "O", "N2", "O2", "Ar", "Total", "H", "N", "AnomalousO"]
 ttypes = ["Texo", "Tn"]
 first = True
 
+EXE_NAME = "msise00_driver"
+
+EXE = importlib.resources.files(__package__)/EXE_NAME
 
 def build():
     """
@@ -33,8 +35,7 @@ def build():
     """
     raise NotImplementedError("Building is no longer supported. Please use the pre-built binaries.")
 
-
-def run(
+def run_legacy(
     time: datetime,
     altkm: float,
     glat: float,
@@ -94,17 +95,56 @@ def loopalt_gtd(
     return atmos
 
 
+def run(
+    time: datetime,
+    altkm: float,
+    glat: float,
+    glon: float,
+    indices: dict[str, T.Any] = None
+) -> dict:
+    """
+    This is a true atomic function
+    """
+    doy = time.strftime("%j")
+
+    f107s = indices["f107s"]
+    f107 = indices["f107"]
+    Ap = indices["Ap"]
+    cmd = [
+        str(EXE),
+        doy,
+        str(time.hour),
+        str(time.minute),
+        str(time.second),
+        str(glat),
+        str(glon),
+        str(f107s),
+        str(f107),
+        str(Ap),
+        str(altkm),
+    ]
+
+    # profiling logs
+    ret = subprocess.check_output(cmd, text=True)
+
+    # different compilers throw in extra \n
+    raw = list(map(float, ret.split()))
+    if not len(raw) == 11:
+        raise ValueError(ret)
+
+    atmos = {k:v for k,v in zip(species, raw[:9])}
+    atmos.update({k:v for k,v in zip(ttypes, raw[9:])})
+
+    return atmos
+
 def rungtd1d(
-    time: datetime, altkm: float, glat: float, glon: float,
-    indices: Optional[dict[str, T.Any]] = None
+    time: datetime, altkm: float, glat: float, glon: float, indices: dict[str, T.Any]
 ) -> xarray.Dataset:
     """
     This is the "atomic" function looped by other functions
     """
     time = todatetime(time)
-    # %% get solar parameters for date
-    if not indices:
-        indices = gi.get_indices(time, smoothdays=81).squeeze().to_dict()
+
     assert isinstance(indices, dict)
     # %% dimensions
     altkm = np.atleast_1d(altkm)
