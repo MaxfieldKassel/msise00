@@ -5,9 +5,8 @@ env:
   CMAKE_BUILD_TYPE: Release
 
 on:
-  push:
-    branches:
-      - main
+  release:
+    types: [published]
 
 jobs:
   build-wheels:
@@ -74,3 +73,9 @@ jobs:
         with:
           name: msise00-wheel-${{ matrix.os }}
           path: dist/*.whl
+
+
+      - name: Upload to GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*.whl
