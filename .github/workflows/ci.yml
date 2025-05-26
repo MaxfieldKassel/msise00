@@ -10,11 +10,13 @@ on:
       - main
 
 jobs:
-  build:
+  build-wheels:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: [3.9, 3.10, 3.11, 3.12]
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
@@ -43,10 +45,10 @@ jobs:
           fi
           cmake --build build
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
-          python-version: 3.9
+          python-version: ${{ matrix.python-version }}
 
       - name: Install packaging tools
         run: pip install --upgrade build
@@ -66,7 +68,7 @@ jobs:
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: msise00-wheel-${{ matrix.os }}
+          name: msise00-wheel-${{ matrix.os }}-py${{ matrix.python-version }}
           path: dist/*.whl
 
       - name: Test wheel install
@@ -75,6 +77,8 @@ jobs:
           FC: gfortran-11
         run: |
           wheel=$(ls dist/*.whl | head -n1)
-          echo "Installing wheel: $wheel[tests]"
-          pip install "${wheel}[tests]"
+          echo "Installing $wheel[tests,lint]"
+          pip install "${wheel}[tests,lint]"
+          flake8
+          mypy
           pytest
