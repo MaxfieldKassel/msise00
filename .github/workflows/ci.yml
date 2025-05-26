@@ -41,7 +41,7 @@ jobs:
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             cmake -B build -G "MinGW Makefiles"
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            cmake -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
+            cmake -B build 
           else
             cmake -B build
           fi
