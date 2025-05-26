@@ -1,12 +1,10 @@
 name: ci
 
-env:
-  CMAKE_BUILD_PARALLEL_LEVEL: 3
-  CMAKE_BUILD_TYPE: Release
-
 on:
   release:
     types: [published]
+  workflow_dispatch:
+  
 
 jobs:
   build-wheels:
@@ -17,65 +15,52 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
-      - name: Install system build tools
+      - name: Set up Python (for cibuildwheel)
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"
+
+      - name: Install cibuildwheel
+        run: pip install cibuildwheel
+
+      - name: Install system dependencies (Linux/macOS)
         if: runner.os != 'Windows'
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
             sudo apt-get update
             sudo apt-get install -y cmake gfortran make
-          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-            brew update
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
             brew install cmake gcc make
           fi
-          
-      - name: Install system build tools (Windows)
+
+      - name: Install system dependencies (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           choco install mingw cmake make --yes
-          Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
-          refreshenv
-      - name: Build Fortran driver
-        shell: bash
-        run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            cmake -B build -G "MinGW Makefiles"
-          else
-            cmake -B build
-          fi
-          cmake --build build
+          $env:PATH += ";C:\ProgramData\chocolatey\bin"
 
-      - name: Set up Python 3.9 
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
+      - name: Build wheels with cibuildwheel
+        env:
+          CIBW_BUILD: "cp3{9,10,11,12}-*"
+          CIBW_ENVIRONMENT: >
+            CMAKE_BUILD_TYPE=Release
+            CMAKE_BUILD_PARALLEL_LEVEL=3
+        run: cibuildwheel --output-dir wheelhouse
 
-      - name: Install packaging tools
-        run: pip install --upgrade build
+      - name: List built wheels
+        run: ls -l wheelhouse
 
-      - name: Build wheel
-        run: python -m build --wheel
-
-      - name: List built artifacts
-        shell: bash
-        run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            dir dist
-          else
-            ls -l dist
-          fi
-
-      - name: Upload wheel artifact
+      - name: Upload built wheels
         uses: actions/upload-artifact@v4
         with:
-          name: msise00-wheel-${{ matrix.os }}
-          path: dist/*.whl
-
+          name: built-wheels-${{ matrix.os }}
+          path: wheelhouse/*.whl
 
       - name: Upload to GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist/*.whl
+          files: wheelhouse/*.whl
