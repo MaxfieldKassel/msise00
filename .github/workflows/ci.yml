@@ -83,7 +83,7 @@ jobs:
 
       - name: Test wheel install
         run: |
-          pip install dist/*.whl[tests]
+          pip install dist\*.whl[tests]
           pytest
         env:
           FC: gfortran-11
@@ -100,7 +100,7 @@ jobs:
         run: |
           # install MinGW / gfortran and CMake
           choco install mingw cmake make --yes
-          refreshenv
+          RefreshEnv.cmd
 
       - name: Build Fortran driver
         shell: bash
