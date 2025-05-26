@@ -48,7 +48,7 @@ def run(
     glon = np.atleast_2d(glon)  # has to be here
     # %% altitude 1-D
     if glat.size == 1 and glon.size == 1 and isinstance(time, (str, date, datetime, np.datetime64)):
-        atmos = rungtd1d(time, altkm, glat.squeeze()[()], glon.squeeze()[()], indices)
+        atmos = rungtd1d(time, altkm, float(glat.squeeze()), float(glon.squeeze()), indices)
     # %% lat/lon grid at 1 altitude
     else:
         atmos = loopalt_gtd(time, glat, glon, altkm, indices)
@@ -150,7 +150,7 @@ def rungtd1d(
         raise ValueError("Ap is not finite.")
 
     exe = importlib.resources.files(__package__)/exe_name
-    if not os.path.exists(exe):
+    if not os.path.exists(str(exe)):
         build()
 
     for i, a in enumerate(altkm):
