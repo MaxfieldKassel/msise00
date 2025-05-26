@@ -15,7 +15,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.9, 3.10, 3.11, 3.12]
+        python-version: ["3.9", "3.10", "3.11", "3.12"]
 
     steps:
       - name: Checkout code
@@ -40,6 +40,8 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             cmake -B build -G "MinGW Makefiles"
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            cmake -B build -DCMAKE_OSX_ARCHITECTURES="x86_64;arm64"
           else
             cmake -B build
           fi
