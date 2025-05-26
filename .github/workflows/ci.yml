@@ -6,7 +6,6 @@ on:
   push:
     branches:
       - main
-
 jobs:
   build-wheels:
     runs-on: ${{ matrix.os }}
@@ -17,14 +16,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
-      - name: Set up Python (for cibuildwheel)
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"
-
-      - name: Install cibuildwheel
-        run: pip install cibuildwheel
 
       - name: Install system dependencies (Linux/macOS)
         if: runner.os != 'Windows'
@@ -44,18 +35,29 @@ jobs:
           choco install mingw cmake make --yes
           $env:PATH += ";C:\ProgramData\chocolatey\bin"
 
+      - name: Install cibuildwheel
+        run: pip install cibuildwheel
+
       - name: Build wheels with cibuildwheel
         env:
           CIBW_BUILD: "cp3{9,10,11,12}-*"
           CIBW_ENVIRONMENT: >
             CMAKE_BUILD_TYPE=Release
             CMAKE_BUILD_PARALLEL_LEVEL=3
+          CIBW_BEFORE_BUILD_LINUX: >
+            apt-get update && apt-get install -y cmake gfortran make
+          CIBW_BEFORE_BUILD_MACOS: >
+            brew install cmake gcc make
+          CIBW_BEFORE_BUILD_WINDOWS: >
+            choco install mingw cmake make --yes
+          CIBW_ENVIRONMENT_MACOS: >
+            CMAKE_OSX_ARCHITECTURES=arm64
         run: cibuildwheel --output-dir wheelhouse
 
       - name: List built wheels
         run: ls -l wheelhouse
 
-      - name: Upload built wheels
+      - name: Upload wheel artifacts
         uses: actions/upload-artifact@v4
         with:
           name: built-wheels-${{ matrix.os }}
