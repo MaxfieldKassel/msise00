@@ -1,1 +1,1 @@
-include src/msise00/msise00_driver
+include src/msise00/msise00_driver*
