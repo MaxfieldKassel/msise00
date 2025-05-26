@@ -10,55 +10,37 @@ on:
       - main
 
 jobs:
-  linux:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-
-    - name: Install Fortran compiler
-      run: sudo apt-get update && sudo apt-get install -y gfortran
-
-    - name: Build Fortran library
-      run: cmake -B build && cmake --build build
-    
-    - name: tree
-      run: tree
-
-    - uses: actions/setup-python@v2
-      with:
-        python-version: 3.9
-
-   
-    - name: Install packaging tools
-      run: pip install --upgrade build
-
-    - name: Build wheel
-      run: python -m build --wheel
-
-    - name: List built artifacts
-      run: ls -l dist
-
-    - name: Upload wheel artifact
-      uses: actions/upload-artifact@v4
-      with:
-        name: msise00-wheel
-        path: dist/*.whl
-
-  macos:
-    needs: linux
-    runs-on: macos-latest
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
 
       - name: Install system build tools
+        shell: bash
         run: |
-          brew update
-          brew install cmake gcc make
+          if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
+            sudo apt-get update
+            sudo apt-get install -y cmake gfortran make
+          elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
+            brew update
+            brew install cmake gcc make
+          else
+            choco install mingw cmake make --yes
+            RefreshEnv.cmd
+          fi
 
       - name: Build Fortran driver
+        shell: bash
         run: |
-          cmake -B build
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            cmake -B build -G "MinGW Makefiles"
+          else
+            cmake -B build
+          fi
           cmake --build build
 
       - name: Set up Python
@@ -73,62 +55,26 @@ jobs:
         run: python -m build --wheel
 
       - name: List built artifacts
-        run: ls -l dist
+        shell: bash
+        run: |
+          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
+            dir dist
+          else
+            ls -l dist
+          fi
 
       - name: Upload wheel artifact
         uses: actions/upload-artifact@v4
         with:
-          name: msise00-wheel-macos
+          name: msise00-wheel-${{ matrix.os }}
           path: dist/*.whl
 
       - name: Test wheel install
-        run: |
-          pip install dist\*.whl[tests]
-          pytest
+        shell: bash
         env:
           FC: gfortran-11
-
-  windows:
-    needs: linux
-    runs-on: windows-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v2
-
-      - name: Install system build tools
-        shell: bash
         run: |
-          # install MinGW / gfortran and CMake
-          choco install mingw cmake make --yes
-          RefreshEnv.cmd
-
-      - name: Build Fortran driver
-        shell: bash
-        run: |
-          cmake -B build -G "MinGW Makefiles"
-          cmake --build build
-
-      - name: Set up Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: 3.9
-
-      - name: Install packaging tools
-        run: pip install --upgrade build
-
-      - name: Build wheel
-        run: python -m build --wheel
-
-      - name: List built artifacts
-        run: dir dist
-
-      - name: Upload wheel artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: msise00-wheel-windows
-          path: dist/*.whl
-
-      - name: Test wheel install
-        run: |
-          pip install dist\*.whl[tests]
+          wheel=$(ls dist/*.whl | head -n1)
+          echo "Installing wheel: $wheel[tests]"
+          pip install "${wheel}[tests]"
           pytest
