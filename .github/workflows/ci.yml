@@ -32,7 +32,8 @@ jobs:
             brew install cmake gcc make
           else
             choco install mingw cmake make --yes
-            RefreshEnv.cmd
+            Import-Module "$env:ChocolateyInstall\helpers\chocolateyProfile.psm1"
+            refreshenv
           fi
 
       - name: Build Fortran driver
