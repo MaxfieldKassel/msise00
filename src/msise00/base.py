@@ -11,7 +11,6 @@ from __future__ import annotations
 import importlib.resources
 import logging
 import os
-import shutil
 import subprocess
 import typing as T
 from datetime import date, datetime
