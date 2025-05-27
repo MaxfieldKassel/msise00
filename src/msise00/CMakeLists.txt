@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.14...3.21)
-
+enable_language(Fortran)
 project(msise00 LANGUAGES Fortran)
 
 include(CTest)
