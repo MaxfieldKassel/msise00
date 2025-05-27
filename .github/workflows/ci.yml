@@ -31,6 +31,14 @@ jobs:
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             brew update
             brew install cmake gcc make
+
+            # Install x86_64 Homebrew if needed
+            if [ ! -d "/usr/local/Homebrew" ]; then
+              arch -x86_64 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+            fi
+
+            # Install x86_64 cmake via Intel Homebrew
+            arch -x86_64 /usr/local/bin/brew install cmake
           fi
           
       - name: Install system build tools (Windows)
@@ -55,8 +63,8 @@ jobs:
             cmake --build build_arm64
 
             echo "Building for x86_64..."
-            arch -x86_64 cmake -B build_x86_64 -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran
-            arch -x86_64 cmake --build build_x86_64
+            arch -x86_64 /usr/local/bin/cmake -B build_x86_64 -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran
+            arch -x86_64 /usr/local/bin/cmake --build build_x86_64
 
             echo "Creating universal binary with lipo..."
             lipo -create \
