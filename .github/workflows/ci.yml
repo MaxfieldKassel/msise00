@@ -45,14 +45,28 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
             cmake -B build -G "MinGW Makefiles"
+            cmake --build build
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
             export MACOSX_DEPLOYMENT_TARGET=11.0
             export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-            cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static-libgfortran -static-libgcc"
+
+            echo "Building for arm64..."
+            cmake -B build_arm64 -DCMAKE_OSX_ARCHITECTURES=arm64
+            cmake --build build_arm64
+
+            echo "Building for x86_64..."
+            arch -x86_64 cmake -B build_x86_64 -DCMAKE_OSX_ARCHITECTURES=x86_64 -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran
+            arch -x86_64 cmake --build build_x86_64
+
+            echo "Creating universal binary with lipo..."
+            lipo -create \
+              build_arm64/src/msise00/msise00_driver \
+              build_x86_64/src/msise00/msise00_driver \
+              -output src/msise00/msise00_driver
           else
             cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static-libgfortran -static-libgcc -static"
+            cmake --build build
           fi
-          cmake --build build
 
       - name: Set up Python 3.9 
         uses: actions/setup-python@v2
