@@ -68,8 +68,8 @@ jobs:
       - name: Delocate macOS wheel
         if: matrix.os == 'macos-latest'
         run: |
-          pip install delocate
-          delocate-wheel --require-archs arm64 -w dist_fixed dist/*.whl
+          arch -arm64 python3 -m pip install delocate
+          arch -arm64 delocate-wheel --require-archs arm64 -w dist_fixed dist/*.whl
           mv dist_fixed/*.whl dist/
 
       - name: List built artifacts
