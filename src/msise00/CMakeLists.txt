@@ -4,7 +4,11 @@ project(msise00 LANGUAGES Fortran)
 
 include(CTest)
 
-set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgfortran -static-libgcc -static")
+if(APPLE)
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgfortran -static-libgcc")
+else()
+  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -static-libgfortran -static-libgcc -static")
+endif()
 add_library(msise00 OBJECT fortran/msise00_sub.f fortran/msise00_data.f)
 target_compile_options(msise00 PRIVATE $<$<Fortran_COMPILER_ID:GNU>:-std=legacy>)
 set_target_properties(msise00 PROPERTIES Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/include)
