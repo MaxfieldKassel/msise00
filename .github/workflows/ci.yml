@@ -44,13 +44,13 @@ jobs:
         shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-          cmake -B build -G "MinGW Makefiles"
+            cmake -B build -G "MinGW Makefiles"
           elif [[ "${{ matrix.os }}" == "macos-latest" ]]; then
-          export MACOSX_DEPLOYMENT_TARGET=11.0
-          export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
-          cmake -B build
+            export MACOSX_DEPLOYMENT_TARGET=11.0
+            export SDKROOT=$(xcrun --sdk macosx --show-sdk-path)
+            cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static-libgfortran -static-libgcc"
           else
-          cmake -B build
+            cmake -B build -DCMAKE_EXE_LINKER_FLAGS="-static-libgfortran -static-libgcc -static"
           fi
           cmake --build build
 
@@ -64,6 +64,13 @@ jobs:
 
       - name: Build wheel
         run: python -m build --wheel
+
+      - name: Delocate macOS wheel
+        if: matrix.os == 'macos-latest'
+        run: |
+          pip install delocate
+          delocate-wheel -w dist_fixed dist/*.whl
+          mv dist_fixed/*.whl dist/
 
       - name: List built artifacts
         shell: bash
